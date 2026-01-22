@@ -3,8 +3,26 @@
 
 <head>
   <meta charset="UTF-8" />
-  <title>Reaction Time Test</title>
+  <title>Reaction Time Test - Measure Your Reflex Speed Online</title>
+  <meta name="description"
+    content="Test your reaction time online! Measure your reflex speed and compare it to the average human with this free reaction time game." />
+  <meta name="keywords"
+    content="reaction time test, reflex game, online reaction speed, human reaction speed, free online game" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Open Graph / Social -->
+  <meta property="og:title" content="Reaction Time Test - Measure Your Reflex Speed Online" />
+  <meta property="og:description"
+    content="Test your reaction time online! Measure your reflex speed and compare it to the average human with this free reaction time game." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://click-reaction-test.vercel.app" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Reaction Time Test - Measure Your Reflex Speed Online" />
+  <meta name="twitter:description"
+    content="Test your reaction time online! Measure your reflex speed and compare it to the average human with this free reaction time game." />
+
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,22 +33,35 @@
       font-family: "Stack Sans Headline", sans-serif;
     }
   </style>
+
+  <!-- Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Game",
+    "name": "Reaction Time Test",
+    "description": "Test your reaction time online! Measure your reflex speed and compare it to the average human with this free reaction time game.",
+    "url": "https://click-reaction-test.vercel.app",
+    "gamePlatform": "Web Browser",
+    "genre": "Reflex / Speed Test"
+  }
+  </script>
 </head>
 
-<body class="bg-slate-100 text-slate-900">
-  <main id="screen" class="w-screen h-screen flex items-center justify-center cursor-pointer select-none">
-    <div class="max-w-xl w-full px-6 text-center space-y-6">
-      <div id="message" class="text-3xl sm:text-5xl font-semibold tracking-tight">
-        reaction speed test<br>click to start
-      </div>
-      <!-- Human comparison -->
-      <div id="comparison" class="text-ld font-medium hidden"></div>
-      <!-- Stats -->
+<body class="bg-slate-100 text-slate-900 dark:bg-slate-900 dark:text-slate-100">
+  <main id="screen" class="relative w-full h-screen flex items-center justify-center cursor-pointer select-none"
+    role="main">
+    <section class="max-w-xl w-full px-6 text-center space-y-6">
+      <h1 id="message" class="text-3xl sm:text-5xl font-semibold tracking-tight">
+        Reaction Speed Test<br>Click to Start
+      </h1>
+      <p id="comparison" class="text-lg font-medium hidden" aria-live="polite"></p>
       <div id="stats" class="text-sm text-white/90 space-y-1 hidden"></div>
-      <!-- Benchmarks -->
-      <div id="benchmarks" class="mt-8 text-xs text-white/70 space-y-1 hidden">
-
-      </div>
+      <div id="benchmarks" class="mt-8 text-xs text-white/70 space-y-1 hidden"></div>
+    </section>
+    <div class="absolute bottom-5 flex-col w-full flex items-center justify-center">
+      <p class="text-sm">average human reaction time: 260ms</p>
+      <p class="text-sm"><a href="https://emjjkk.tech">emjjkk.tech</a></p>
     </div>
   </main>
 
@@ -41,8 +72,7 @@
     const benchmarks = document.getElementById("benchmarks")
     const comparison = document.getElementById("comparison")
 
-    const HUMAN_AVG = 250
-
+    const HUMAN_AVG = 260
     let state = "idle"
     let startTime = 0
     let timeoutId = null
@@ -60,35 +90,14 @@
 
     function updateStats(reaction) {
       results.push(reaction)
-
       const best = Math.min(...results)
-      const avg = Math.round(
-        results.reduce((a, b) => a + b, 0) / results.length
-      )
-
-      stats.innerHTML = `
-        <div>Last: <span class="font-medium">${reaction} ms</span></div>
-        <div>Best: <span class="font-medium">${best} ms</span></div>
-        <div>Average: <span class="font-medium">${avg} ms</span></div>
-      `
-
-      const percent =
-        Math.round(((HUMAN_AVG - reaction) / HUMAN_AVG) * 100)
-
+      const avg = Math.round(results.reduce((a, b) => a + b, 0) / results.length)
+      stats.innerHTML = ``
+      const percent = Math.round(((HUMAN_AVG - reaction) / HUMAN_AVG) * 100)
       if (percent >= 0) {
-        comparison.innerHTML = `
-          <span class="text-white-200">
-            That was ${percent}% faster
-          </span>
-          than the average human, amazing!
-        `
+        comparison.innerHTML = `That was ${percent}% faster than average, amazing!<br/>Click to try again.`
       } else {
-        comparison.innerHTML = `
-          <span class="text-white-200">
-            That was ${Math.abs(percent)}% slower
-          </span>
-          than the average human, nice try...
-        `
+        comparison.innerHTML = `That was ${Math.abs(percent)}% slower than average, nice try...<br/>Click to try again.`
       }
     }
 
@@ -97,17 +106,11 @@
       showGreenUI(false)
       setBackground("bg-blue-600")
       message.textContent = "Click when the screen turns green..."
-      
-      // Clear the comparison text when starting a new round
       comparison.innerHTML = ""
     }
 
     function setupRound() {
-      const delay =
-        1000 +
-        Math.random() * 1800 +
-        Math.random() * 800
-
+      const delay = 1000 + Math.random() * 1800 + Math.random() * 800
       timeoutId = setTimeout(() => {
         state = "ready"
         setBackground("bg-green-500")
@@ -120,11 +123,9 @@
     screen.addEventListener("click", () => {
       if (state === "idle" || state === "result") {
         startRound()
-        // Set up the actual timer after a brief delay
         setTimeout(setupRound, 50)
         return
       }
-
       if (state === "waiting") {
         state = "result"
         clearTimeout(timeoutId)
@@ -133,12 +134,9 @@
         showGreenUI(false)
         return
       }
-
       if (state === "ready") {
         const reaction = Math.round(performance.now() - startTime)
-
         if (reaction < 50) return
-
         state = "result"
         setBackground("bg-green-500")
         message.textContent = `${reaction} ms`
@@ -148,9 +146,7 @@
     })
 
     document.addEventListener("keydown", e => {
-      if (e.code === "Space") {
-        screen.click()
-      }
+      if (e.code === "Space") screen.click()
     })
   </script>
 </body>
