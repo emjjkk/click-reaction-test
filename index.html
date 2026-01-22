@@ -1,82 +1,158 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <title>Reaction Time Test</title>
-  <style>
-    html, body {
-      margin: 0;
-      width: 100%;
-      height: 100%;
-    }
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Stack+Sans+Headline:wght@200..700&display=swap" rel="stylesheet">
 
+  <style>
     body {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: system-ui, sans-serif;
-      font-size: 2rem;
-      user-select: none;
-      cursor: pointer;
-      background: white;
-      color: black;
+      font-family: "Stack Sans Headline", sans-serif;
     }
   </style>
 </head>
-<body>
-  Click to start
-</body>
 
-<script>
-  const body = document.body
+<body class="bg-slate-100 text-slate-900">
+  <main id="screen" class="w-screen h-screen flex items-center justify-center cursor-pointer select-none">
+    <div class="max-w-xl w-full px-6 text-center space-y-6">
+      <div id="message" class="text-3xl sm:text-5xl font-semibold tracking-tight">
+        reaction speed test<br>click to start
+      </div>
+      <!-- Human comparison -->
+      <div id="comparison" class="text-ld font-medium hidden"></div>
+      <!-- Stats -->
+      <div id="stats" class="text-sm text-white/90 space-y-1 hidden"></div>
+      <!-- Benchmarks -->
+      <div id="benchmarks" class="mt-8 text-xs text-white/70 space-y-1 hidden">
 
-  let state = "idle" // idle | waiting | ready | result
-  let startTime = 0
-  let timeoutId = null
+      </div>
+    </div>
+  </main>
 
-  function reset() {
-    state = "idle"
-    body.style.background = "white"
-    body.style.color = "black"
-    body.textContent = "Click to start"
-    if (timeoutId) {
-      clearTimeout(timeoutId)
-      timeoutId = null
+  <script>
+    const screen = document.getElementById("screen")
+    const message = document.getElementById("message")
+    const stats = document.getElementById("stats")
+    const benchmarks = document.getElementById("benchmarks")
+    const comparison = document.getElementById("comparison")
+
+    const HUMAN_AVG = 250
+
+    let state = "idle"
+    let startTime = 0
+    let timeoutId = null
+    let results = []
+
+    function setBackground(colorClass) {
+      document.body.className = colorClass
     }
-  }
 
-  body.addEventListener("click", () => {
-    if (state === "idle") {
+    function showGreenUI(show) {
+      stats.classList.toggle("hidden", !show)
+      benchmarks.classList.toggle("hidden", !show)
+      comparison.classList.toggle("hidden", !show)
+    }
+
+    function updateStats(reaction) {
+      results.push(reaction)
+
+      const best = Math.min(...results)
+      const avg = Math.round(
+        results.reduce((a, b) => a + b, 0) / results.length
+      )
+
+      stats.innerHTML = `
+        <div>Last: <span class="font-medium">${reaction} ms</span></div>
+        <div>Best: <span class="font-medium">${best} ms</span></div>
+        <div>Average: <span class="font-medium">${avg} ms</span></div>
+      `
+
+      const percent =
+        Math.round(((HUMAN_AVG - reaction) / HUMAN_AVG) * 100)
+
+      if (percent >= 0) {
+        comparison.innerHTML = `
+          <span class="text-white-200">
+            That was ${percent}% faster
+          </span>
+          than the average human, amazing!
+        `
+      } else {
+        comparison.innerHTML = `
+          <span class="text-white-200">
+            That was ${Math.abs(percent)}% slower
+          </span>
+          than the average human, nice try...
+        `
+      }
+    }
+
+    function startRound() {
       state = "waiting"
-      body.style.background = "#1e3a8a" // blue
-      body.style.color = "white"
-      body.textContent = "Wait..."
+      showGreenUI(false)
+      setBackground("bg-blue-600")
+      message.textContent = "Click when the screen turns green..."
+      
+      // Clear the comparison text when starting a new round
+      comparison.innerHTML = ""
+    }
 
-      const delay = 1000 + Math.random() * 3000
+    function setupRound() {
+      const delay =
+        1000 +
+        Math.random() * 1800 +
+        Math.random() * 800
 
       timeoutId = setTimeout(() => {
         state = "ready"
-        body.style.background = "#16a34a" // green
-        body.textContent = "CLICK!"
+        setBackground("bg-green-500")
+        message.textContent = "Click!"
+        showGreenUI(true)
         startTime = performance.now()
       }, delay)
-
-    } else if (state === "waiting") {
-      state = "result"
-      body.style.background = "#7f1d1d" // red
-      body.textContent = "Too early! Click to try again."
-      clearTimeout(timeoutId)
-
-    } else if (state === "ready") {
-      const reaction = Math.round(performance.now() - startTime)
-      state = "result"
-      body.style.background = "white"
-      body.style.color = "black"
-      body.textContent = `${reaction} ms — click to go again`
-
-    } else if (state === "result") {
-      reset()
     }
-  })
-</script>
+
+    screen.addEventListener("click", () => {
+      if (state === "idle" || state === "result") {
+        startRound()
+        // Set up the actual timer after a brief delay
+        setTimeout(setupRound, 50)
+        return
+      }
+
+      if (state === "waiting") {
+        state = "result"
+        clearTimeout(timeoutId)
+        setBackground("bg-red-600")
+        message.textContent = "Too early"
+        showGreenUI(false)
+        return
+      }
+
+      if (state === "ready") {
+        const reaction = Math.round(performance.now() - startTime)
+
+        if (reaction < 50) return
+
+        state = "result"
+        setBackground("bg-green-500")
+        message.textContent = `${reaction} ms`
+        showGreenUI(true)
+        updateStats(reaction)
+      }
+    })
+
+    document.addEventListener("keydown", e => {
+      if (e.code === "Space") {
+        screen.click()
+      }
+    })
+  </script>
+</body>
+
 </html>
